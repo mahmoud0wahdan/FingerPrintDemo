@@ -120,13 +120,14 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
             m_ibScan.requestPermission(deviceId);
         } else {
             mobileLog.append("\nopening device at index 0");
-            new Thread(() -> {
+            runOnUiThread(() -> {
                 try {
+                    mobileLog.append("\nIbScan device permission Request granted " + deviceId);
                     m_ibScanDevice = m_ibScan.openDevice(0);
                 } catch (IBScanException e) {
                     e.printStackTrace();
                 }
-            }).start();
+            });
         }
     }
 
@@ -138,16 +139,14 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
     @Override
     public void scanDevicePermissionGranted(int deviceId, boolean granted) {
         if (granted) {
-
-            new Thread(() -> {
+            runOnUiThread(() -> {
                 try {
                     mobileLog.append("\nIbScan device permission Request granted " + deviceId);
                     m_ibScanDevice = m_ibScan.openDevice(0);
                 } catch (IBScanException e) {
                     e.printStackTrace();
                 }
-            }).start();
-
+            });
             // showToastOnUiThread("Permission granted to device " + deviceId, Toast.LENGTH_SHORT);
         } else {
             mobileLog.append("\nIbScan device permission Request denied");
