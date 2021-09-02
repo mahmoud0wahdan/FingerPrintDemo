@@ -29,17 +29,16 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mobileLog=findViewById(R.id.log);
+        mobileLog = findViewById(R.id.log);
         mobileLog.setText("");
         m_ibScan = IBScan.getInstance(this.getApplicationContext());
         m_ibScan.setScanListener(this);
         final UsbManager manager = (UsbManager) this.getApplicationContext().getSystemService(Context.USB_SERVICE);
         final HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
         mobileLog.append("searching for connected device while looping");
-        if(deviceList.isEmpty()){
+        if (deviceList.isEmpty()) {
             mobileLog.append("\ndevice list is empty");
-        }
-        else {
+        } else {
             for (UsbDevice device : deviceList.values()) {
                 final boolean isScanDevice = IBScan.isScanDevice(device);
                 mobileLog.append("\nfound a device but validate if it is a scan device");
@@ -84,17 +83,17 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
     @Override
     public void deviceAcquisitionCompleted(IBScanDevice ibScanDevice, IBScanDevice.ImageType imageType) {
         mobileLog.append("\ndevice Acquisition Completed");
-        m_ibScanDevice=ibScanDevice;
+        m_ibScanDevice = ibScanDevice;
     }
 
     @Override
     public void deviceImageResultAvailable(IBScanDevice ibScanDevice, IBScanDevice.ImageData imageData, IBScanDevice.ImageType imageType, IBScanDevice.ImageData[] imageData1) {
-        mobileLog.append("\nIbScan device image now available with original size "+imageType);
+        mobileLog.append("\nIbScan device image now available with original size " + imageType);
     }
 
     @Override
     public void deviceImageResultExtendedAvailable(IBScanDevice ibScanDevice, IBScanException e, IBScanDevice.ImageData imageData, IBScanDevice.ImageType imageType, int i, IBScanDevice.ImageData[] imageData1, IBScanDevice.SegmentPosition[] segmentPositions) {
-        mobileLog.append("\nIbScan device image now available with Extended size "+imageType);
+        mobileLog.append("\nIbScan device image now available with Extended size " + imageType);
     }
 
     @Override
@@ -104,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
 
     @Override
     public void deviceWarningReceived(IBScanDevice ibScanDevice, IBScanException warning) {
-        mobileLog.append("\nIbScan device warning "+warning.getType().toString() +  " "+ warning.getMessage());
+        mobileLog.append("\nIbScan device warning " + warning.getType().toString() + " " + warning.getMessage());
     }
 
     @Override
@@ -114,52 +113,56 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
 
     @Override
     public void scanDeviceAttached(int deviceId) {
-        mobileLog.append("\nIbScan device attached "+deviceId);
+        mobileLog.append("\nIbScan device attached " + deviceId);
 
         final boolean hasPermission = m_ibScan.hasPermission(deviceId);
         if (!hasPermission) {
             m_ibScan.requestPermission(deviceId);
-        }
-        else{
-            try {
-                mobileLog.append("\nopening device at index 0");
-                m_ibScan.openDeviceAsync(0);
-            } catch (IBScanException e) {
-                mobileLog.append("\nopen device error "+e.getMessage());
-            }
+        } else {
+            mobileLog.append("\nopening device at index 0");
+            new Thread(() -> {
+                try {
+                    m_ibScanDevice = m_ibScan.openDevice(0);
+                } catch (IBScanException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
     }
 
     @Override
     public void scanDeviceDetached(int deviceId) {
-        mobileLog.append("\nIbScan device Detached "+deviceId);
+        mobileLog.append("\nIbScan device Detached " + deviceId);
     }
 
     @Override
     public void scanDevicePermissionGranted(int deviceId, boolean granted) {
         if (granted) {
-//            m_ibScan.openDevice(deviceId)
-            mobileLog.append("\nIbScan device permission Request granted "+ deviceId);
-            try {
-                m_ibScan.openDeviceAsync(0);
-            } catch (IBScanException e) {
-                e.printStackTrace();
-            }
+
+            new Thread(() -> {
+                try {
+                    mobileLog.append("\nIbScan device permission Request granted " + deviceId);
+                    m_ibScanDevice = m_ibScan.openDevice(0);
+                } catch (IBScanException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
             // showToastOnUiThread("Permission granted to device " + deviceId, Toast.LENGTH_SHORT);
         } else {
             mobileLog.append("\nIbScan device permission Request denied");
-          //  showToastOnUiThread("Permission denied to device " + deviceId, Toast.LENGTH_SHORT);
+            //  showToastOnUiThread("Permission denied to device " + deviceId, Toast.LENGTH_SHORT);
         }
     }
 
     @Override
     public void scanDeviceCountChanged(int deviceId) {
-        mobileLog.append("\nscan Device Count Changed "+deviceId);
+        mobileLog.append("\nscan Device Count Changed " + deviceId);
     }
 
     @Override
     public void scanDeviceInitProgress(int deviceIndex, int progressValue) {
-        mobileLog.append("\nscanDeviceInitProgress "+progressValue+" %");
+        mobileLog.append("\nscanDeviceInitProgress " + progressValue + " %");
     }
 
     @Override
@@ -205,9 +208,11 @@ public class MainActivity extends AppCompatActivity implements IBScanListener, I
         }
 
     }
+
     protected IBScanDevice getIBScanDevice() {
         return (this.m_ibScanDevice);
     }
+
     protected void setIBScanDevice(IBScanDevice ibScanDevice) {
         m_ibScanDevice = ibScanDevice;
         if (ibScanDevice != null) {
